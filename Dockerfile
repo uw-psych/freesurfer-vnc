@@ -9,12 +9,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LC_ALL='C.UTF-8'
 ENV LANG='C.UTF-8'
 
-RUN groupadd --gid $USER_GID $USERNAME \
-	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
-
 # Install dependencies:
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends \
+RUN apt-get update --quiet \
+	&& apt-get install --yes --quiet --no-install-recommends \
 		apt-utils \
 		at-spi2-core \
 		bash-completion \
@@ -108,24 +105,23 @@ RUN apt-get update && \
 		xsel \
 		xvfb \
 		xz-utils \
-		zip
+		zip \
+	&& apt-get clean
 
 # Install en_US.UTF-8 locale:
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
-# Set up sudo:
-RUN echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-	&& chmod 0440 /etc/sudoers.d/$USERNAME
-
 # Install GitHub CLI:
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
-	chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
-	echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list >/dev/null && \
-	apt-get update --quiet && \
-	apt-get install --yes --quiet gh
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+	&& chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list >/dev/null \
+	&& apt-get update --quiet \
+	&& apt-get install --yes --quiet gh \
+	&& apt-get clean
 
 # Install TurboVNC:
 ARG VNC_DEFAULT_PASSWORD=password
+ARG VNC_DEFAULT_PORT=5900
 ENV VNC_DEFAULT_PASSWORD="${VNC_DEFAULT_PASSWORD}"
 ENV PATH="/opt/TurboVNC/bin:$PATH"
 ENV TVNC_WM=xfce
@@ -133,18 +129,20 @@ ENV VNC_BASE_DIR="/vnc"
 ENV VNC_LOG_FILE="${VNC_BASE_DIR}/vnc.log"
 ENV VNC_SOCKET_FILE="${VNC_BASE_DIR}/vnc.socket"
 ENV VNC_PASSWORD_FILE="${VNC_BASE_DIR}/passwd"
+ENV VNC_PORT="${VNC_DEFAULT_PORT:-5900}"
 ENV DISPLAY=":2"
 ENV SHELL="${SHELL:-/bin/bash}"
 
 ADD install-turbovnc.sh /opt/install-turbovnc.sh
-RUN /opt/install-turbovnc.sh
-RUN mkdir -p "$VNC_BASE_DIR" && \
-	chown -R "$USERNAME:$USERNAME" "$VNC_BASE_DIR" && \
-	echo '$vncUserDir = "$ENV{VNC_BASE_DIR}";' >>/etc/turbovncserver.conf && \
-	echo "${VNC_DEFAULT_PASSWORD}" | vncpasswd -f >"${VNC_PASSWORD_FILE}" && \
-	chown "$USERNAME:$USERNAME" "${VNC_PASSWORD_FILE}" && \
-	chmod 600 "${VNC_PASSWORD_FILE}" && \
-	echo "Set VNC password to ${VNC_PASSWORD} in file ${VNC_PASSWORD_FILE}"
+RUN /opt/install-turbovnc.sh \
+	&& mkdir -p "$VNC_BASE_DIR" \
+	&& chown -R "$USERNAME:$USERNAME" "$VNC_BASE_DIR" \
+	&& echo '$vncUserDir = "$ENV{VNC_BASE_DIR}";' >>/etc/turbovncserver.conf \
+	&& echo "${VNC_DEFAULT_PASSWORD}" | vncpasswd -f >"${VNC_PASSWORD_FILE}" \
+	&& chown "$USERNAME:$USERNAME" "${VNC_PASSWORD_FILE}" \
+	&& chmod 600 "${VNC_PASSWORD_FILE}" \
+	&& echo "Set VNC password to ${VNC_PASSWORD} in file ${VNC_PASSWORD_FILE}" \
+	&& apt-get clean
 
 # Install FreeSurfer:
 ARG FREESURFER_VERSION=7.4.1
@@ -168,15 +166,20 @@ ENV MNI_PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5"
 ENV PATH="$FREESURFER_HOME/bin:$FREESURFER_HOME/tktools:$MINC_BIN_DIR:$PATH"
 
 # Install Freesurfer
-RUN FREESURFER_VERSION="${FREESURFER_VERSION:-7.4.1}" dlpath=$(curl -w "%{filename_effective}" -fLO "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FREESURFER_VERSION}/freesurfer_ubuntu22-${FREESURFER_VERSION}_amd64.deb") && \
-	dpkg --install --force-depends "${dlpath}" && \
-	apt-get install --fix-broken --yes && \
-	rm -f "${dlpath:-}"
-
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN FREESURFER_VERSION="${FREESURFER_VERSION:-7.4.1}" dlpath=$(curl -w "%{filename_effective}" -fLO "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FREESURFER_VERSION}/freesurfer_ubuntu22-${FREESURFER_VERSION}_amd64.deb") \
+	&& apt-get update --quiet \
+	&& dpkg --install --force-depends "${dlpath}" \
+	&& apt-get install --fix-broken --yes --quiet \
+	&& rm -f "${dlpath:-}" \
+	&& apt-get clean
 
 ADD freeview.desktop /usr/share/applications/freeview.desktop
 
+# Set up user:
+RUN groupadd --gid $USER_GID $USERNAME \
+	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+	&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+	&& chmod 0440 /etc/sudoers.d/$USERNAME
 
 USER "$USERNAME"
 
