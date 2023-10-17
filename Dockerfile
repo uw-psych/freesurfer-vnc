@@ -168,7 +168,7 @@ ENV MNI_PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5"
 ENV PATH="$FREESURFER_HOME/bin:$FREESURFER_HOME/tktools:$MINC_BIN_DIR:$PATH"
 
 # Install Freesurfer
-RUN dlpath=$(curl -w "%{filename_effective}" -fLO "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/$FREESURFER_VERSION/freesurfer_ubuntu22-$FREESURFER_VERSION_amd64/deb") && \
+RUN FREESURFER_VERSION="${FREESURFER_VERSION:-7.4.1}" dlpath=$(curl -w "%{filename_effective}" -fLO "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FREESURFER_VERSION}/freesurfer_ubuntu22-${FREESURFER_VERSION}_amd64/deb") && \
 	dpkg --install --force-depends "${dlpath}" && \
 	apt-get install --fix-broken --yes && \
 	rm -f "${dlpath:-}"
