@@ -106,7 +106,11 @@ RUN apt-get update --quiet \
 		xvfb \
 		xz-utils \
 		zip \
-	&& apt-get clean
+	&& apt-get clean \
+	&& groupadd --gid $USER_GID $USERNAME \
+	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+	&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+	&& chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Install en_US.UTF-8 locale:
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
@@ -175,11 +179,7 @@ RUN FREESURFER_VERSION="${FREESURFER_VERSION:-7.4.1}" dlpath=$(curl -w "%{filena
 
 ADD freeview.desktop /usr/share/applications/freeview.desktop
 
-# Set up user:
-RUN groupadd --gid $USER_GID $USERNAME \
-	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-	&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-	&& chmod 0440 /etc/sudoers.d/$USERNAME
+
 
 USER "$USERNAME"
 
