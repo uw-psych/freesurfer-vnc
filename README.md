@@ -37,6 +37,6 @@ Open a command prompt window (such as the built-in command prompt, PowerShell, o
 
 Open the Windows terminal/command prompt and run the following command to launch the container with a VNC server running on port 5900, and your Windows home directory mounted as `/userhome` inside the container:
 
-```bat
-docker run --name fvnc --rm -it -v %HOMEPATH%:/userhome -p 127.0.0.1:5900:5900 freesurfer-vnc:latest
+```bash
+docker run --name fvnc --rm -it -v %HOMEPATH%:/userhome -p 127.0.0.1:5900:5900 ghcr.io/uw-psych/freesurfer-vnc:latest
 ```
