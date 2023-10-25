@@ -33,10 +33,17 @@ To install TurboVNC, download the latest version from [here](https://sourceforge
 
 Open a command prompt window (such as the built-in command prompt, PowerShell, or Windows Terminal), and then run the following command to launch the container with a VNC server running on port 5900:
 
+```bash
+docker run --name fvnc --rm -it -v "$HOME":/myhome -p 127.0.0.1:5900:5900 ghcr.io/uw-psych/freesurfer-vnc:latest
+```
+
 ### Windows 
 
-Open the Windows terminal/command prompt and run the following command to launch the container with a VNC server running on port 5900, and your Windows home directory mounted as `/userhome` inside the container:
+#### WSL2
+Open the Windows WSL terminal prompt and run the following command to launch the container with a VNC server running on port 5900, and your Windows home directory mounted as `/userhome` inside the container:
 
 ```bash
-docker run --name fvnc --rm -it -v %HOMEPATH%:/userhome -p 127.0.0.1:5900:5900 ghcr.io/uw-psych/freesurfer-vnc:latest
+docker run --name fvnc --rm -it -v "$HOME"/myhome -p 127.0.0.1:5900:5900 ghcr.io/uw-psych/freesurfer-vnc:latest
 ```
+
+Next, open TurboVNC Viewer and connect to `localhost:5900`. When prompted, enter the password `password`.
